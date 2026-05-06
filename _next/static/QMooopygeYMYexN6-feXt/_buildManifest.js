@@ -1,7 +1,12 @@
 self.__BUILD_MANIFEST = {
   "__rewrites": {
     "afterFiles": [],
-    "beforeFiles": [],
+    "beforeFiles": [
+      {
+        "source": "/WebArPlatform_Public//_next/:path+",
+        "destination": "/WebArPlatform_Public/_next/:path+"
+      }
+    ],
     "fallback": []
   },
   "sortedPages": [
