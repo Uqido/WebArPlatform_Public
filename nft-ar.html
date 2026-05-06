@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>AR.js NFT Dynamic</title>
+
+    <script src="/ar-libs/aframe-master.min.js"></script>
+    <script src="/ar-libs/aframe-extras.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>
+      eruda.init();
+    </script>
+
+    <script>
+      AFRAME.registerComponent("print-reveal", {
+        schema: {
+          type: { type: "string", default: "clip-z" }, // 'clip-x', 'clip-y', 'clip-z'
+          duration: { type: "number", default: 6000 },
+          min: { type: "number", default: -1500 },
+          max: { type: "number", default: 0 },
+        },
+        init: function () {
+          this.el.sceneEl.renderer.localClippingEnabled = true;
+          this.animating = false;
+
+          // Plane direction wrt to the type
+          let normalVector;
+          if (this.data.type === "clip-x") {
+            normalVector = new THREE.Vector3(-1, 0, 0);
+          } else if (this.data.type === "clip-y") {
+            normalVector = new THREE.Vector3(0, -1, 0);
+          } else {
+            normalVector = new THREE.Vector3(0, 0, -1);
+          }
+
+          this.clipPlane = new THREE.Plane(normalVector, this.data.min);
+
+          // Apply clip plane when model is loaded
+          this.el.addEventListener("model-loaded", (e) => {
+            const mesh = this.el.getObject3D("mesh");
+            if (mesh) {
+              mesh.traverse((node) => {
+                if (node.isMesh && node.material) {
+                  node.material.clippingPlanes = [this.clipPlane];
+                  node.material.clipShadows = true;
+                  node.material.needsUpdate = true;
+                }
+              });
+            }
+          });
+
+          this.el.addEventListener("start-3js-anim", () => {
+            if (!this.animating) this.startAnimation();
+          });
+        },
+
+        startAnimation: function () {
+          this.animating = true;
+          let startTime = Date.now();
+
+          const animate = () => {
+            let progress = (Date.now() - startTime) / this.data.duration;
+            if (progress > 1) progress = 1;
+
+            // Compute new position for the plane
+            this.clipPlane.constant =
+              this.data.min + (this.data.max - this.data.min) * progress;
+
+            if (progress < 1) {
+              requestAnimationFrame(animate);
+            } else {
+              this.animating = false;
+            }
+          };
+
+          animate();
+        },
+      });
+    </script>
+
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: transparent;
+      }
+      .arjs-loader {
+        height: 100%;
+        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .arjs-loader div {
+        text-align: center;
+        color: white;
+        font-size: 1.25em;
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="arjs-loader">
+      <div>Caricamento descrittori immagine...</div>
+    </div>
+
+    <a-scene
+      vr-mode-ui="enabled: false;"
+      renderer="logarithmicDepthBuffer: true; precision: high; antialias: false; alpha: true;"
+      embedded
+      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; displayWidth: 1280; displayHeight: 720;"
+      gesture-detector
+    >
+      <a-nft
+        id="nft-marker"
+        smooth="true"
+        smoothCount="30"
+        smoothTolerance="0.2"
+        smoothThreshold="2"
+        raycaster="objects: .clickable"
+        emitevents="true"
+        cursor="fuse: false; rayOrigin: mouse;"
+      >
+        <a-entity id="ar-model" class="clickable"></a-entity>
+        <a-box
+          position="40 0 0"
+          scale="100 100 100"
+          material="color: red; opacity: 0.5;"
+        ></a-box>
+      </a-nft>
+
+      <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
+
+        const markerType = urlParams.get("markerType") || "nft";
+        const markerUrl = urlParams.get("markerUrl");
+        const modelUrl = urlParams.get("modelUrl");
+        const scale = urlParams.get("scale") || "1 1 1";
+        const rotation = urlParams.get("rotation") || "0 0 0";
+        const position = urlParams.get("position") || "0 0 0";
+
+        // Animation config
+        const customAnimationParam = urlParams.get("customAnimation");
+
+        const marker = document.querySelector("#nft-marker");
+        const modelEntity = document.querySelector("#ar-model");
+
+        if (marker && markerUrl) {
+          marker.setAttribute("type", markerType);
+          marker.setAttribute("url", markerUrl);
+        }
+
+        if (modelEntity && modelUrl) {
+          modelEntity.setAttribute("gltf-model", modelUrl);
+          modelEntity.setAttribute("scale", scale);
+          modelEntity.setAttribute("rotation", rotation);
+          modelEntity.setAttribute("position", position);
+
+          // Manage three.js animation
+          if (customAnimationParam) {
+            try {
+              const animationData = JSON.parse(customAnimationParam);
+
+              //Manage reveal animation
+              if (
+                animationData &&
+                animationData.name === "reveal" &&
+                animationData.config
+              ) {
+                const cfg = animationData.config;
+
+                let revealConfigStr = `type: ${cfg.type || "clip-z"};`;
+                if (cfg.duration !== undefined)
+                  revealConfigStr += ` duration: ${cfg.duration};`;
+                if (cfg.min !== undefined)
+                  revealConfigStr += ` min: ${cfg.min};`;
+                if (cfg.max !== undefined)
+                  revealConfigStr += ` max: ${cfg.max};`;
+
+                modelEntity.setAttribute("print-reveal", revealConfigStr);
+              }
+
+              //Add other animation management
+            } catch (error) {
+              console.error("Errore nel parsing di customAnimation:", error);
+            }
+          }
+        }
+
+        if (marker) {
+          marker.addEventListener("markerFound", () => {
+            window.parent.postMessage(
+              { type: "MARKER_STATE", isFound: true },
+              "*",
+            );
+          });
+          marker.addEventListener("markerLost", () => {
+            window.parent.postMessage(
+              { type: "MARKER_STATE", isFound: false },
+              "*",
+            );
+          });
+        }
+
+        if (modelEntity) {
+          modelEntity.addEventListener("model-loaded", (e) => {
+            const model = e.detail.model;
+            if (model?.animations?.length > 0) {
+              const animNames = model.animations.map((a) => a.name);
+              window.parent.postMessage(
+                { type: "ANIMATIONS_LOADED", animations: animNames },
+                "*",
+              );
+            } else {
+              window.parent.postMessage(
+                { type: "ANIMATIONS_LOADED", animations: [] },
+                "*",
+              );
+            }
+          });
+        }
+      });
+
+      window.addEventListener("message", (event) => {
+        if (event.data?.type === "CHANGE_ANIMATION") {
+          const modelEl = document.getElementById("ar-model");
+          if (modelEl) {
+            if (event.data.clip) {
+              modelEl.removeAttribute("animation-mixer");
+              setTimeout(() => {
+                modelEl.setAttribute("animation-mixer", {
+                  clip: event.data.clip,
+                  loop: "once",
+                  clampWhenFinished: true,
+                  crossFadeDuration: 0.0,
+                });
+              }, 10);
+            }
+
+            // Start three.js animation
+            modelEl.emit("start-3js-anim");
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
