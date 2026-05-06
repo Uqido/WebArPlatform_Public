@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>AR.js Demo</title>
+
+    <script src="/ar-libs/aframe-master.min.js"></script>
+    <script src="/ar-libs/aframe-ar.js"></script>
+    <script src="/ar-libs/aframe-extras.min.js"></script>
+    <!-- npm package not available-->
+    <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
+
+    <script>
+      const headParams = new URLSearchParams(window.location.search);
+      const effectToLoad = headParams.get("particleEffectName");
+
+      if (effectToLoad) {
+        document.write(
+          `<script src="/particles/${effectToLoad}.js"><\/script>`,
+        );
+      }
+    </script>
+
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: transparent;
+      }
+    </style>
+  </head>
+  <body>
+    <a-scene
+      embedded
+      arjs="sourceType: webcam; debugUIEnabled: false;"
+      vr-mode-ui="enabled: false"
+      gesture-detector
+    >
+      <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+      function parseUrlBoolean(value, defaultValue = false) {
+        if (value === null) {
+          return defaultValue;
+        }
+        return value.toLowerCase() === "true" || value === "1";
+      }
+
+      //  Read params from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const markerType = urlParams.get("markerType");
+      const markerUrl = urlParams.get("markerUrl");
+      const modelUrl = urlParams.get("modelUrl");
+      const scale = urlParams.get("scale") || "1 1 1";
+      const rotation = urlParams.get("rotation") || "0 0 0";
+      const position = urlParams.get("position") || "0 0 0";
+      const particleEffectName = urlParams.get("particleEffectName");
+      const enableInteraction = urlParams.get("enableInteraction");
+
+      if (modelUrl && markerType) {
+        const scene = document.querySelector("a-scene");
+
+        // Create marker
+        const marker = document.createElement("a-marker");
+        if (markerType === "pattern") {
+          marker.setAttribute("type", "pattern");
+          marker.setAttribute("url", markerUrl);
+        } else if (markerType === "preset") {
+          marker.setAttribute("preset", markerUrl); // es: "hiro"
+        }
+        // Set attributes for interactions
+        marker.setAttribute("raycaster", "objects: .clickable");
+        marker.setAttribute("emitevents", "true");
+        marker.setAttribute("cursor", "fuse: false; rayOrigin: mouse;");
+
+        // Listener Marker
+        marker.addEventListener("markerFound", () => {
+          window.parent.postMessage(
+            { type: "MARKER_STATE", isFound: true },
+            "*",
+          );
+        });
+
+        marker.addEventListener("markerLost", () => {
+          window.parent.postMessage(
+            { type: "MARKER_STATE", isFound: false },
+            "*",
+          );
+        });
+        //  Create 3D entity
+        const modelEntity = document.createElement("a-entity");
+        modelEntity.setAttribute("id", "ar-model");
+
+        // Interaction management
+        if (parseUrlBoolean(enableInteraction, false)) {
+          modelEntity.setAttribute("class", "clickable");
+          modelEntity.setAttribute(
+            "gesture-handler",
+            "minScale: 0.1; maxScale: 10",
+          );
+        }
+
+        // Animation management
+        modelEntity.setAttribute(
+          "animation-mixer",
+          "clip: *; loop: repeat; crossFadeDuration: 0.3",
+        );
+
+        modelEntity.setAttribute("gltf-model", modelUrl);
+        modelEntity.setAttribute("position", position);
+        modelEntity.setAttribute("scale", scale);
+        modelEntity.setAttribute("rotation", rotation);
+
+        // Pass animation list to the parent
+        modelEntity.addEventListener("model-loaded", (e) => {
+          const model = e.detail.model;
+          if (model && model.animations && model.animations.length > 0) {
+            const animNames = model.animations.map((anim) => anim.name);
+            window.parent.postMessage(
+              { type: "ANIMATIONS_LOADED", animations: animNames },
+              "*",
+            );
+          }
+        });
+
+        marker.appendChild(modelEntity);
+        scene.appendChild(marker);
+
+        if (particleEffectName) {
+          if (scene.hasLoaded) {
+            addParticles();
+          } else {
+            scene.addEventListener("loaded", addParticles);
+          }
+
+          function addParticles() {
+            const particleEntity = document.createElement("a-entity");
+            particleEntity.setAttribute("id", "particle-system");
+
+            particleEntity.setAttribute(particleEffectName, "");
+
+            particleEntity.setAttribute("position", "0 0 0");
+
+            marker.appendChild(particleEntity);
+          }
+        }
+      } else {
+        console.warn("Missing AR paramaters in Iframe url.");
+      }
+
+      // Listener for messages to change animation
+      window.addEventListener("message", (event) => {
+        if (event.data && event.data.type === "CHANGE_ANIMATION") {
+          const modelEl = document.getElementById("ar-model");
+          const clipName = event.data.clip;
+
+          if (modelEl) {
+            // Set the new animation
+            modelEl.setAttribute(
+              "animation-mixer",
+              `clip: ${clipName}; loop: repeat; crossFadeDuration: 0.3`,
+            );
+          } else {
+            console.warn("AR model not loaded yet or ID not found");
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,34 @@
+{
+  "name": "web-ar-platform",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "postinstall": "shx mkdir -p public/ar-libs && shx cp -f \"node_modules/aframe/dist/*.js\" public/ar-libs/ && shx cp -f node_modules/@ar-js-org/ar.js/aframe/build/aframe-ar.js public/ar-libs/ && shx cp -f node_modules/aframe-extras/dist/aframe-extras.min.js public/ar-libs/"
+  },
+  "dependencies": {
+    "@ar-js-org/ar.js": "^3.4.8",
+    "@google/model-viewer": "^4.2.0",
+    "aframe": "^1.7.1",
+    "aframe-extras": "^7.7.0",
+    "jsqr": "^1.4.0",
+    "next": "16.2.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/aframe": "^1.2.9",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.1",
+    "shx": "^0.4.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
