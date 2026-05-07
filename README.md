@@ -3,8 +3,7 @@
 First, build and run the application:
 
 ```bash
-npm run build
-npm run start
+npm run dev
 ```
 
 The app will be available locally at http://localhost:3000.
@@ -19,6 +18,18 @@ Once executed, Cloudflare will generate a public URL in the terminal, for exampl
 https://some-random-words.trycloudflare.com
 
 To test the application on other devices, simply open the generated link on your smartphone
+
+## Deploy 
+To deploy the application run the following command in the `main` branch:
+
+```bash
+npm run deploy
+```
+What the script does:
+- Build the application
+- Generates a static export of the project.
+- Copies the exported files to the gh-pages branch.
+- Pushes the updates to GitHub, which automatically triggers the deployment process.
 
 ## QR
 Scan the following QRs to reach the webAR platform. Once the camera is active, scan again the QR to go to the AR effect.
