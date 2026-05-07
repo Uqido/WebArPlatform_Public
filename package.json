@@ -1,23 +1,19 @@
 {
   "name": "web-ar-platform",
   "version": "0.1.0",
-  "homepage": "https://uqido.github.io/WebArPlatform_Public",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "shx mkdir -p public/ar-libs && shx cp -f \"node_modules/aframe/dist/*.js\" public/ar-libs/ && shx cp -f node_modules/@ar-js-org/ar.js/aframe/build/aframe-ar.js public/ar-libs/ && shx cp -f node_modules/aframe-extras/dist/aframe-extras.min.js public/ar-libs/",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d out --dotfiles"
+    "postinstall": "shx mkdir -p public/ar-libs && shx cp -f \"node_modules/aframe/dist/*.js\" public/ar-libs/ && shx cp -f node_modules/@ar-js-org/ar.js/aframe/build/aframe-ar.js public/ar-libs/ && shx cp -f node_modules/@ar-js-org/ar.js/aframe/build/aframe-ar-nft.js public/ar-libs/ && shx cp -f node_modules/aframe-extras/dist/aframe-extras.min.js public/ar-libs/ "
   },
   "dependencies": {
     "@ar-js-org/ar.js": "^3.4.8",
     "@google/model-viewer": "^4.2.0",
     "aframe": "^1.7.1",
     "aframe-extras": "^7.7.0",
-    "gh-pages": "^6.3.0",
     "jsqr": "^1.4.0",
     "next": "16.2.1",
     "react": "19.2.4",

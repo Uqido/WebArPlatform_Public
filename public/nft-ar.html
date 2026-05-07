@@ -8,16 +8,37 @@
     />
     <title>AR.js NFT Dynamic</title>
 
-    <script src="./ar-libs/aframe-master.min.js"></script>
-    <script src="./ar-libs/aframe-extras.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <link rel="stylesheet" href="/css/ar-styles.css" />
+
+    <script src="/ar-libs/aframe-master.min.js"></script>
+    <script src="/ar-libs/aframe-extras.min.js"></script>
+    <script src="/ar-libs/aframe-ar-nft.js"></script>
     <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
 
+    <!-- Enable console on smartphone-->
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     <script>
-      eruda.init();
+      const erudaParams = new URLSearchParams(window.location.search);
+      if (erudaParams.get("debug") === "1") {
+        const erudaScript = document.createElement("script");
+        erudaScript.src = "https://cdn.jsdelivr.net/npm/eruda";
+        erudaScript.onload = function () {
+          eruda.init();
+        };
+        document.head.appendChild(erudaScript);
+      }
     </script>
 
+    <script>
+      const headParams = new URLSearchParams(window.location.search);
+      const effectToLoad = headParams.get("particleEffectName");
+
+      if (effectToLoad) {
+        document.write(
+          `<script src="/particles/${effectToLoad}.js"><\/script>`,
+        );
+      }
+    </script>
     <script>
       AFRAME.registerComponent("print-reveal", {
         schema: {
@@ -90,6 +111,7 @@
         margin: 0;
         overflow: hidden;
         background-color: transparent;
+        font-family: "Manrope", sans-serif;
       }
       .arjs-loader {
         height: 100%;
@@ -107,7 +129,7 @@
         text-align: center;
         color: white;
         font-size: 1.25em;
-        font-family: sans-serif;
+        font-family: "Manrope", sans-serif;
       }
     </style>
   </head>
@@ -127,19 +149,15 @@
       <a-nft
         id="nft-marker"
         smooth="true"
-        smoothCount="30"
-        smoothTolerance="0.2"
-        smoothThreshold="2"
+        smooth-count="14"
+        smooth-tolerance="1.5"
+        smooth-threshold="3"
+        min-confidence="0.8"
         raycaster="objects: .clickable"
         emitevents="true"
         cursor="fuse: false; rayOrigin: mouse;"
       >
         <a-entity id="ar-model" class="clickable"></a-entity>
-        <a-box
-          position="40 0 0"
-          scale="100 100 100"
-          material="color: red; opacity: 0.5;"
-        ></a-box>
       </a-nft>
 
       <a-entity camera></a-entity>
@@ -156,9 +174,13 @@
         const rotation = urlParams.get("rotation") || "0 0 0";
         const position = urlParams.get("position") || "0 0 0";
 
+        // Particles
+        const particleEffectName = urlParams.get("particleEffectName");
+
         // Animation config
         const customAnimationParam = urlParams.get("customAnimation");
 
+        const scene = document.querySelector("a-scene");
         const marker = document.querySelector("#nft-marker");
         const modelEntity = document.querySelector("#ar-model");
 
@@ -217,6 +239,25 @@
               "*",
             );
           });
+
+          // Particles management
+          if (particleEffectName) {
+            function addParticles() {
+              const particleEntity = document.createElement("a-entity");
+              particleEntity.setAttribute("id", "particle-system");
+              particleEntity.setAttribute(particleEffectName, "");
+              particleEntity.setAttribute("position", "0 0 0");
+
+              // add aprticles to marker
+              marker.appendChild(particleEntity);
+            }
+
+            if (scene.hasLoaded) {
+              addParticles();
+            } else {
+              scene.addEventListener("loaded", addParticles);
+            }
+          }
         }
 
         if (modelEntity) {
