@@ -9,6 +9,7 @@ import {
   getAdjustedARConfig,
   useIframeMessage,
 } from "@/utils/arHelper";
+import { BASE_PATH } from "@/utils/configHelper";
 
 export default function IceCorePage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -19,8 +20,8 @@ export default function IceCorePage() {
 
   const baseConfig: ARConfig = {
     markerType: "nft",
-    markerUrl: "./nft/ice-core/ice-core-target",
-    modelUrl: "/models/ice-core/Wrapper.gltf",
+    markerUrl: `${BASE_PATH}/nft/ice-core/ice-core-target`,
+    modelUrl: `${BASE_PATH}/models/ice-core/Wrapper.gltf`,
     scale: [1.5, 1.5, 1.5],
     rotation: [80, 180, 0],
     position: [135, 0, -125],
@@ -35,7 +36,9 @@ export default function IceCorePage() {
 
   const config = getAdjustedARConfig(baseConfig, IOS_OFFSETS);
 
-  const iframeSrc = `/nft-ar.html?${buildARQueryString(config)}`;
+  const iframeSrc = `${BASE_PATH}/nft-ar.html?${buildARQueryString(config)}`;
+
+  const markerImageUrl = `${BASE_PATH}/models/ice-core/Marker.jpg`;
 
   // Listen for events from iframe
   useIframeMessage({
@@ -91,7 +94,7 @@ export default function IceCorePage() {
 
       {/* Overlay image */}
       <Image
-        src="/models/ice-core/Marker.jpg"
+        src={markerImageUrl}
         alt="Inquadra questa immagine"
         width={512}
         height={1024}

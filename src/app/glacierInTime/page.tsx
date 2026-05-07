@@ -9,6 +9,7 @@ import {
   getAdjustedARConfig,
   useIframeMessage,
 } from "@/utils/arHelper";
+import { BASE_PATH } from "@/utils/configHelper";
 
 export default function GlacierInTimePage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -30,8 +31,8 @@ export default function GlacierInTimePage() {
 
   const baseConfig: ARConfig = {
     markerType: "nft",
-    markerUrl: "./nft/glacier-in-time/glacier-in-time-target",
-    modelUrl: "/models/glacier-in-time/Wrapper.gltf",
+    markerUrl: `${BASE_PATH}/nft/glacier-in-time/glacier-in-time-target`,
+    modelUrl: `${BASE_PATH}/models/glacier-in-time/Wrapper.gltf`,
     scale: [250, 250, 250],
     rotation: [0, 180, 0],
     position: [125, 0, -180],
@@ -47,9 +48,9 @@ export default function GlacierInTimePage() {
 
   const config = getAdjustedARConfig(baseConfig, IOS_OFFSETS);
 
-  const iframeSrc = `/nft-ar.html?${buildARQueryString(config)}`;
+  const iframeSrc = `${BASE_PATH}/nft-ar.html?${buildARQueryString(config)}`;
 
-  const markerImageUrl = "/models/glacier-in-time/Marker.jpg";
+  const markerImageUrl = `${BASE_PATH}/models/glacier-in-time/Marker.jpg`;
 
   // Listen for events from iframe
   useIframeMessage({
